@@ -42,11 +42,16 @@ def call_function(context, data_dict):
     )
     logging.error(response.status_code)
     if response.status_code == 200:
-    	to = "task complete..."
+        to = {}
+        to["result"] = 'task complete...'
+        to['response'] = json.loads(response.text)
     else:
-    	to = "task failed..."
+        to = {}
+        to["result"] = 'task failed...'
+        to['response'] = json.loads(response.text)
+
     response2 = urlparse.urljoin(context['site_url'], 'api/action')
-    dd = {'to':to, 'id':data_dict['task_id']}
+    dd = {'to':json.dumps(to), 'id':data_dict['task_id']}
     response = requests.post(
         api_url + '/change_db_row',
         json.dumps(dd),

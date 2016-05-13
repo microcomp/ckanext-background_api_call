@@ -9,6 +9,7 @@ import ckan.plugins as p
 import ckan.logic
 import ckan.logic as logic
 import db
+import ckan.lib.base as base
 
 def create_background_p_table(context):
     if db.background_api_calls is None:
@@ -20,7 +21,7 @@ def call_function(context, data_dict):
     try:
         logic.check_access(data_dict['function'], context, data_dict)
     except logic.NotAuthorized:
-        base.abort(401, base._('Not authorized to see this page'))
+        raise logic.NotAuthorized()
     logging.error("call celery task...")
     
     user = p.toolkit.get_action('get_site_user')(
@@ -33,34 +34,46 @@ def call_function(context, data_dict):
     try:
         data_dict['function']
     except KeyError, e:
-        base.abort(400, base._('bad request'))
-    
+        ed = {'message': 'Function name not set'}
+        raise logic.ValidationError(ed)
+    if data_dict['function'] == "async_api":
+        ed = {'message': 'Function not supported'}
+        raise logic.ValidationError(ed)
     task_id = unicode(uuid.uuid4())
     dd = {
     "apikey":user.get('apikey'),
     "task_id":task_id,
-    "result":"started"
+    "result":json.dumps({'result':"task started"})
     }
 
     new_db_row(context,dd)
     data_dict['task_id']  = task_id
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
-    return {"progress":"processing...", "task_id":task_id}
+    return {"progress":"task in queue", "task_id":task_id}
 
 @ckan.logic.side_effect_free
 def get_result(context, data_dict):
     create_background_p_table(context)
-    user = p.toolkit.get_action('get_site_user')(
-        {'model': model, 'ignore_auth': True, 'defer_commit': True}, {}
-    )
-    data_dict['apikey'] = user.get('apikey')
-    info = db.BackgroundApiCalls.get(**data_dict)[0]
-    if info.result == 'done':
-        del_db_row(**data_dict)
-    result = {}
-    result['current_task'] = info.result
-    return result
+
+    db.BackgroundApiCalls.delete_old_data(**data_dict)
+    session = context['session']
+    session.commit()
+
+
+    logging.error("------------------------------------------------------")
+    logging.error(data_dict)
+    try:
+        info = db.BackgroundApiCalls.get(**data_dict)[0]
+        if info.result == 'done':
+            del_db_row(**data_dict)
+        result = {}
+        result['current_task'] = json.loads(info.result)
+        
+        return result
+    except IndexError:
+        ed = {'message': 'Wrong task ID'}
+        raise logic.ValidationError(ed)
 
 @ckan.logic.side_effect_free
 def new_db_row(context, data_dict):
@@ -95,8 +108,8 @@ def change_db_row(context, data_dict):
     create_background_p_table(context)
     info = db.BackgroundApiCalls.get(**{'task_id':id})[0]
     info.result = to
+    info.save()
     session = context['session']
-    session.add(info)
     session.commit()
     return {"status":"success"} 
 

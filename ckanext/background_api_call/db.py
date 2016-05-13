@@ -36,6 +36,15 @@ def init_db(model):
                 model.Session.delete(i)
             return
 
+        @classmethod
+        def delete_old_data(cls, **kw):
+            too_old = datetime.today() - timedelta(days=1)
+
+            query = model.Session.query(cls).autoflush(False).filter(cls.date <= too_old).all()
+            for i in query:
+                model.Session.delete(i)
+            return
+
 
         @classmethod
         def background_api_calls(cls, **kw):
