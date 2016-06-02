@@ -22,6 +22,8 @@ def call_function(context, data_dict):
         logic.check_access(data_dict['function'], context, data_dict)
     except logic.NotAuthorized:
         raise logic.NotAuthorized()
+    except ValueError:
+        pass
     logging.error("call celery task...")
     
     user = p.toolkit.get_action('get_site_user')(
