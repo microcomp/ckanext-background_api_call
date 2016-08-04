@@ -30,7 +30,7 @@ def call_function(context, data_dict):
         {'model': model, 'ignore_auth': True, 'defer_commit': True}, {}
     )
     context2 = json.dumps({
-        'site_url': "http://localhost:5000",
+        'site_url': "https://localhost",
         'apikey': user.get('apikey')
     })
     try:
