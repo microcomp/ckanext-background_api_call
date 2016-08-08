@@ -33,9 +33,10 @@ def call_function(context, data_dict):
     logging.error(funct)
     #toolkit.get_action(funct)(context, data_dict)
     logging.error(context)
-    api_url = urlparse.urljoin(context['site_url'], 'api/action')
+    api_url = urlparse.urljoin(context['site_url'], 'api/3/action')
     response = requests.post(
         api_url + '/'+data_dict['function'],
+        verify=False,
         json.dumps(data_dict),
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
@@ -50,10 +51,11 @@ def call_function(context, data_dict):
         to["result"] = 'task failed...'
         to['response'] = json.loads(response.text)
 
-    response2 = urlparse.urljoin(context['site_url'], 'api/action')
+    response2 = urlparse.urljoin(context['site_url'], 'api/3/action')
     dd = {'to':json.dumps(to), 'id':data_dict['task_id']}
     response = requests.post(
         api_url + '/change_db_row',
+        verify=False,
         json.dumps(dd),
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
