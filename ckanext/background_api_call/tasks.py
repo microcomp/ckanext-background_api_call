@@ -36,8 +36,8 @@ def call_function(context, data_dict):
     api_url = urlparse.urljoin(context['site_url'], 'api/3/action')
     response = requests.post(
         api_url + '/'+data_dict['function'],
-        verify=False,
         json.dumps(data_dict),
+        verify=False,
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
@@ -55,8 +55,8 @@ def call_function(context, data_dict):
     dd = {'to':json.dumps(to), 'id':data_dict['task_id']}
     response = requests.post(
         api_url + '/change_db_row',
-        verify=False,
         json.dumps(dd),
+        verify=False,
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
