@@ -38,14 +38,18 @@ def call_function(context, data_dict):
     logging.error(context)
 
     api_url = urlparse.urljoin(site_url, 'api/3/action')
-    response = requests.post(
-        api_url + '/'+data_dict['function'],
-        json.dumps(data_dict),
-        headers={'Authorization': context['apikey'],
-                 'Content-Type': 'application/json'}
-
-    )
-    logging.error(response.status_code)
+    url = api_url + '/'+data_dict['function']
+    logging.error(url)
+    try:
+        response = requests.post(
+            url,
+            json.dumps(data_dict),
+            headers={'Authorization': context['apikey'],
+                     'Content-Type': 'application/json'})
+        logging.error(response.status_code)
+    except Exception:
+        logging.error("request failed")
+        
     if response.status_code == 200:
         to = {}
         to["result"] = 'task complete...'
