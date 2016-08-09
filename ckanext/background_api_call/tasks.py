@@ -41,7 +41,6 @@ def call_function(context, data_dict):
     response = requests.post(
         api_url + '/'+data_dict['function'],
         json.dumps(data_dict),
-        verify=False,
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
 
@@ -61,7 +60,6 @@ def call_function(context, data_dict):
     response = requests.post(
         api_url + '/change_db_row',
         json.dumps(dd),
-        verify=False,
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
