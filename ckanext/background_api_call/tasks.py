@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 import ckan.logic as logic
 import ckan.lib.base as base
+from ckan.lib.base import config
 import ckan.lib.helpers as h
 import ckan.lib.navl.dictization_functions as df
 import ckan.plugins as p
@@ -19,6 +20,8 @@ import datetime
 import mimetypes
 import requests
 import urlparse
+
+site_url = config.get("ckan.internal_site_url","http://127.0.0.1")
 
 @celery.task(name = "background_api_call.__call_function")
 def call_function(context, data_dict):
@@ -33,13 +36,15 @@ def call_function(context, data_dict):
     logging.error(funct)
     #toolkit.get_action(funct)(context, data_dict)
     logging.error(context)
-    api_url = urlparse.urljoin(context['site_url'], 'api/3/action')
+
+    api_url = urlparse.urljoin(site_url, 'api/3/action')
     response = requests.post(
         api_url + '/'+data_dict['function'],
-        json.dumps(data_dict),
         verify=False,
+        json.dumps(data_dict),
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
+
     )
     logging.error(response.status_code)
     if response.status_code == 200:
@@ -51,12 +56,12 @@ def call_function(context, data_dict):
         to["result"] = 'task failed...'
         to['response'] = json.loads(response.text)
 
-    response2 = urlparse.urljoin(context['site_url'], 'api/3/action')
+    response2 = urlparse.urljoin(site_url, 'api/3/action')
     dd = {'to':json.dumps(to), 'id':data_dict['task_id']}
     response = requests.post(
         api_url + '/change_db_row',
-        json.dumps(dd),
         verify=False,
+        json.dumps(dd),
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
