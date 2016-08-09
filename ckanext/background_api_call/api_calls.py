@@ -10,6 +10,7 @@ import ckan.logic
 import ckan.logic as logic
 import db
 import ckan.lib.base as base
+from ckan.lib.base import config
 
 def create_background_p_table(context):
     if db.background_api_calls is None:
@@ -30,7 +31,7 @@ def call_function(context, data_dict):
         {'model': model, 'ignore_auth': True, 'defer_commit': True}, {}
     )
     context2 = json.dumps({
-        'site_url': "https://localhost",
+        'site_url': config.get("ckan.internal_site_url","http://127.0.0.1"),
         'apikey': user.get('apikey')
     })
     try:
