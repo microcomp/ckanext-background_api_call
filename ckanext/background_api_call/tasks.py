@@ -20,6 +20,7 @@ import datetime
 import mimetypes
 import requests
 import urlparse
+import shutil
 
 site_url = config.get("ckan.internal_site_url","http://127.0.0.1")
 
@@ -30,9 +31,9 @@ def call_function(context, data_dict):
     logging.error("celery task started...")
     funct = ""
     try:
-    	funct = data_dict.get('function')
+        funct = data_dict.get('function')
     except KeyError:
-    	funct = "" 
+        funct = "" 
     logging.error(funct)
     #toolkit.get_action(funct)(context, data_dict)
     logging.error(context)
@@ -40,15 +41,26 @@ def call_function(context, data_dict):
     api_url = urlparse.urljoin(site_url, 'api/3/action')
     url = api_url + '/'+data_dict['function']
     logging.error(url)
-    try:
-        response = requests.post(
-            url,
-            json.dumps(data_dict),
-            headers={'Authorization': context['apikey'],
-                     'Content-Type': 'application/json'})
-        logging.error(response.status_code)
-    except Exception:
-        logging.error("request failed")
+    fil = data_dict.get("file", None)
+    logging.error( "file in data dict" + fil)
+    data_dict.pop("function")
+    logging.error(data_dict)
+    upload_files = []
+    up = data_dict.pop("file")
+    if fil != None:
+        upload_files = [('upload', open(up, 'rb+'))]
+        
+    logging.error( "file in data dict")
+    
+    #data_dict.pop("upload")
+    
+    response = requests.post(
+        url,
+        data=data_dict,
+        headers={'Authorization': context['apikey']}, 
+        files=upload_files)
+        
+    logging.error(response.status_code)
         
     if response.status_code == 200:
         to = {}
@@ -67,4 +79,6 @@ def call_function(context, data_dict):
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
+    if fil:
+        shutil.rmtree(fil)
     return "done..."
