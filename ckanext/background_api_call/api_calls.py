@@ -10,7 +10,95 @@ import ckan.logic
 import ckan.logic as logic
 import db
 import ckan.lib.base as base
-from ckan.lib.base import config
+import base64
+
+import cgi
+import cgitb; cgitb.enable()
+import os, sys
+
+import ckan.lib.munge as munge
+
+
+class TempUpload(object):
+    def __init__(self, resource, folder):
+        self.path = folder
+        if not self.path:
+            self.storage_path = None
+            return
+        self.storage_path = self.path
+        try:
+            os.makedirs(self.storage_path)
+        except OSError, e:
+            ## errno 17 is file already exists
+            if e.errno != 17:
+                raise
+        self.filename = None
+
+        url = resource.get('url')
+        upload_field_storage = resource.pop('upload', None)
+        self.clear = resource.pop('clear_upload', None)
+
+        if isinstance(upload_field_storage, cgi.FieldStorage):
+            self.filename = upload_field_storage.filename
+            self.filename = munge.munge_filename(self.filename)
+            self.upload_file = upload_field_storage.file
+        elif self.clear:
+            resource['url_type'] = ''
+
+    def upload(self, filename, max_size=10):
+        filepath = self.path+ filename
+        if self.filename:
+            try:
+                os.makedirs(self.path)
+            except OSError, e:
+                ## errno 17 is file already exists
+                if e.errno != 17:
+                    raise
+            tmp_filepath = self.path+ filename + '~'
+            output_file = open(tmp_filepath, 'wb+')
+            self.upload_file.seek(0)
+            current_size = 0
+            while True:
+                current_size = current_size + 1
+                #MB chunks
+                data = self.upload_file.read(2 ** 20)
+                if not data:
+                    break
+                output_file.write(data)
+                if current_size > max_size:
+                    os.remove(tmp_filepath)
+                    raise logic.ValidationError(
+                        {'upload': [_('File upload too large')]}
+                    )
+            output_file.close()
+            os.rename(tmp_filepath, filepath)
+
+        if self.clear:
+            try:
+                os.remove(filepath)
+            except OSError, e:
+                pass
+
+
+def save_uploaded_file (form, upload_dir):
+    """This saves a file uploaded by an HTML form.
+    The form_field is the name of the file input field from the form.
+       For example, the following form_field would be "file_1":
+           <input name="file_1" type="file">
+       The upload_dir is the directory where the file will be written.
+       If no file was uploaded or if the field does not exist then
+       this does nothing.
+    """
+    
+    fileitem = form["upload"]
+    if not fileitem.file: return
+    fout = file (os.path.join(upload_dir, fileitem.filename), 'wb')
+    while 1:
+        chunk = fileitem.file.readline()
+        if not chunk: break
+        fout.write (chunk)
+    fout.close()
+
 
 def create_background_p_table(context):
     if db.background_api_calls is None:
@@ -51,6 +139,14 @@ def call_function(context, data_dict):
 
     new_db_row(context,dd)
     data_dict['task_id']  = task_id
+    
+
+    folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
+       
+    fn = data_dict["upload"].filename
+    uploader = TempUpload(data_dict,folder_name)
+    uploader.upload(fn)
+    data_dict["file"] = folder_name+fn
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
     return {"progress":"task in queue", "task_id":task_id}
