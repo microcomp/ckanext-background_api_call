@@ -45,7 +45,7 @@ class TempUpload(object):
         elif self.clear:
             resource['url_type'] = ''
 
-    def upload(self, filename, max_size=10):
+    def upload(self, filename, max_size=1024):
         filepath = self.path+ filename
         if self.filename:
             try:
@@ -147,6 +147,7 @@ def call_function(context, data_dict):
     uploader = TempUpload(data_dict,folder_name)
     uploader.upload(fn)
     data_dict["file"] = folder_name+fn
+    data_dict["file_name"] = fn
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
     return {"progress":"task in queue", "task_id":task_id}
