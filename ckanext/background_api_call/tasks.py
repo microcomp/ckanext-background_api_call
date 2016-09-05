@@ -67,6 +67,8 @@ def call_function(context, data_dict):
         to = {}
         to["result"] = 'task complete...'
         to['response'] = json.loads(response.text)
+        if funct == "resource_create" or funct == "resource_update":
+            to["response"]["result"]["url"] = "/".join(to["response"]["result"]["url"].split("/")[:-1])+"/"+data_dict["file_name"]
     else:
         to = {}
         to["result"] = 'task failed...'
@@ -80,12 +82,12 @@ def call_function(context, data_dict):
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
-    requests.post(
-        api_url + '/resource_update',
-        json.dumps({"id":to["response"]["result"]["id"], "url":data_dict["file_name"]}),
-        headers={'Authorization': context['apikey'],
-                 'Content-Type': 'application/json'}
-    )
+    if funct == "resource_create" or funct == "resource_update":
+        requests.post(
+            api_url + '/resource_update',
+            json.dumps({"id":to["response"]["result"]["id"], "url":data_dict["file_name"]}),
+            headers={'Authorization': context['apikey'],
+                     'Content-Type': 'application/json'})
     
     import os
     os.remove(fil)
