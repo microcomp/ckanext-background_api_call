@@ -27,40 +27,41 @@ site_url = config.get("ckan.internal_site_url","http://127.0.0.1")
 @celery.task(name = "background_api_call.__call_function")
 def call_function(context, data_dict):
     context = json.loads(context)
-    logging.error(context)
-    logging.error("celery task started...")
+    #logging.error(context)
+    #logging.error("celery task started...")
     funct = ""
     try:
         funct = data_dict.get('function')
     except KeyError:
         funct = "" 
-    logging.error(funct)
+    #logging.error(funct)
     #toolkit.get_action(funct)(context, data_dict)
-    logging.error(context)
+    #logging.error(context)
 
     api_url = urlparse.urljoin(site_url, 'api/3/action')
     url = api_url + '/'+data_dict['function']
-    logging.error(url)
+    #logging.error(url)
     fil = data_dict.get("file", None)
-    logging.error( "file in data dict" + fil)
+    #logging.error( "file in data dict" + fil)
     data_dict.pop("function")
-    logging.error(data_dict)
+    #logging.error(data_dict)
     upload_files = []
     up = data_dict.pop("file")
     if fil != None:
-        upload_files = [('upload', open(up, 'rb+'))]
+        file_to_upload = open(up, 'rb+')
+        upload_files = [('upload', file_to_upload)]
         
-    logging.error( "file in data dict")
+    #logging.error( "file in data dict")
     
     #data_dict.pop("upload")
-    
+    #logging.error(data_dict)
     response = requests.post(
         url,
         data=data_dict,
         headers={'Authorization': context['apikey']}, 
         files=upload_files)
         
-    logging.error(response.status_code)
+    #logging.error(response.status_code)
         
     if response.status_code == 200:
         to = {}
@@ -79,6 +80,16 @@ def call_function(context, data_dict):
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
-    if fil:
-        shutil.rmtree(fil)
+    requests.post(
+        api_url + '/resource_update',
+        json.dumps({"id":to["response"]["result"]["id"], "url":data_dict["file_name"]}),
+        headers={'Authorization': context['apikey'],
+                 'Content-Type': 'application/json'}
+    )
+    
+    import os
+    os.remove(fil)
+    dr = fil.split("/")
+    dr = dr[:-1]
+    os.rmdir("/".join(dr))
     return "done..."
