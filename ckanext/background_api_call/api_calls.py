@@ -17,7 +17,7 @@ import cgitb; cgitb.enable()
 import os, sys
 
 import ckan.lib.munge as munge
-
+from ckan.lib.base import config
 
 class TempUpload(object):
     def __init__(self, resource, folder):
