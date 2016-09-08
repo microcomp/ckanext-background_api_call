@@ -108,6 +108,10 @@ def create_background_p_table(context):
 def call_function(context, data_dict):
     logging.error(data_dict)
     try:
+        data_dict.get("function")
+    except Exception, e:
+       raise logic.BadRequest()
+    try:
         logic.check_access(data_dict['function'], context, data_dict)
     except logic.NotAuthorized:
         raise logic.NotAuthorized()
@@ -142,12 +146,13 @@ def call_function(context, data_dict):
     
 
     folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
-       
-    fn = data_dict["upload"].filename
-    uploader = TempUpload(data_dict,folder_name)
-    uploader.upload(fn)
-    data_dict["file"] = folder_name+fn
-    data_dict["file_name"] = fn
+    fn = ""
+    if data_dict.get("upload"):
+        fn = data_dict["upload"].filename
+        uploader = TempUpload(data_dict,folder_name)
+        uploader.upload(fn)
+        data_dict["file"] = folder_name+fn
+        data_dict["file_name"] = fn
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
     return {"progress":"task in queue", "task_id":task_id}
