@@ -153,6 +153,10 @@ def call_function(context, data_dict):
         uploader.upload(fn)
         data_dict["file"] = folder_name+fn
         data_dict["file_name"] = fn
+        if "url" not in data_dict.keys():
+            data_dict["url"] = "anything"
+        if "type" not in data_dict.keys():
+            data_dict["type"] = "file.upload"
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
     return {"progress":"task in queue", "task_id":task_id}
