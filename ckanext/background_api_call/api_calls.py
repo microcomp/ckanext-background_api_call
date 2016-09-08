@@ -147,7 +147,7 @@ def call_function(context, data_dict):
 
     folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
     fn = ""
-    if data_dict.get("upload"):
+    if "upload" in data_dict.keys():
         fn = data_dict["upload"].filename
         uploader = TempUpload(data_dict,folder_name)
         uploader.upload(fn)
@@ -217,4 +217,3 @@ def change_db_row(context, data_dict):
     session = context['session']
     session.commit()
     return {"status":"success"} 
-
