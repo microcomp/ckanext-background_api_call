@@ -111,6 +111,8 @@ def call_function(context, data_dict):
         data_dict.get("function")
     except Exception, e:
        raise logic.BadRequest()
+
+    logging.error("function ... OK")
     try:
         logic.check_access(data_dict['function'], context, data_dict)
     except logic.NotAuthorized:
@@ -148,15 +150,24 @@ def call_function(context, data_dict):
     folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
     fn = ""
     if "upload" in data_dict.keys():
+        logging.error("upload found ... OK")
         fn = data_dict["upload"].filename
+        logging.warning("filename ... "+fn)
         uploader = TempUpload(data_dict,folder_name)
         uploader.upload(fn)
         data_dict["file"] = folder_name+fn
+        logging.warning("uploading ... "+ data_dict["file"])
         data_dict["file_name"] = fn
+        logging.warning("filename ... "+ data_dict["file_name"])
         if "url" not in data_dict.keys():
             data_dict["url"] = "anything"
+            logging.error("url not found")
+            logging.error("url set ... OK")
         if "type" not in data_dict.keys():
             data_dict["type"] = "file.upload"
+            logging.error("type not found")
+            logging.error("type set ... OK")
+
     celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
 
     return {"progress":"task in queue", "task_id":task_id}
