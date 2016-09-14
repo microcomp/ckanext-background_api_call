@@ -1,32 +1,28 @@
 from ckan.lib.celery_app import celery
-import ckan.model as model
-import ckan.plugins.toolkit as toolkit
 import logging
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-import ckan.logic as logic
-import ckan.lib.base as base
 from ckan.lib.base import config
-import ckan.lib.helpers as h
-import ckan.lib.navl.dictization_functions as df
-import ckan.plugins as p
 from ckan.common import _, c
 
-import api_calls
 import json
 
-import datetime
-import mimetypes
 import requests
 import urlparse
-import shutil
+
 
 site_url = config.get("ckan.internal_site_url","http://127.0.0.1")
 
 @celery.task(name = "background_api_call.__call_function")
 def call_function(context, data_dict):
     context = json.loads(context)
+    api_url = urlparse.urljoin(site_url, 'api/3/action')
+    requests.post(
+        api_url + '/change_db_row',
+        json.dumps( {'to':{ 'result':"task started..."}, 'id':data_dict['task_id']} ),
+        headers={'Authorization': context['apikey'],
+                 'Content-Type': 'application/json'}
+    )
+    
     logging.error(context)
     logging.error("celery task started...")
     funct = ""
@@ -35,7 +31,7 @@ def call_function(context, data_dict):
     except KeyError:
         funct = "" 
 
-    api_url = urlparse.urljoin(site_url, 'api/3/action')
+    
     url = api_url + '/'+data_dict['function']
     fil = data_dict.get("file", None)
     data_dict.pop("function")
