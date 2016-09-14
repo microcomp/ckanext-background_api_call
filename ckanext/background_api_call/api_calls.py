@@ -4,7 +4,7 @@ import logging
 import ckan.model as model
 from ckan.common import _, c
 import json
-from celery.result import AsyncResult
+
 import ckan.plugins as p
 import ckan.logic
 import ckan.logic as logic
@@ -137,16 +137,17 @@ def call_function(context, data_dict):
     dd = {
     "apikey":user.get('apikey'),
     "task_id":task_id,
-    "result":json.dumps({'result':"task started"})
+    "result":json.dumps({'result':"task sent to celery"})
     }
 
     new_db_row(context,dd)
     data_dict['task_id']  = task_id
     
 
-    folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
-    fn = ""
+    
     if "upload" in data_dict.keys():
+        folder_name = "/var/lib/ckan/resources/upload_temp/"+unicode(uuid.uuid4())+"/"
+        fn = ""
         fn = data_dict["upload"].filename
         uploader = TempUpload(data_dict,folder_name)
         uploader.upload(fn)
