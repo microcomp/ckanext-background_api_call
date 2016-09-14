@@ -18,7 +18,7 @@ def call_function(context, data_dict):
     api_url = urlparse.urljoin(site_url, 'api/3/action')
     requests.post(
         api_url + '/change_db_row',
-        json.dumps( {'to':{ 'result':"task started..."}, 'id':data_dict['task_id']} ),
+        json.dumps( {'to':json.dumps({ 'result':'task started...'}), 'id':data_dict['task_id']} ),
         headers={'Authorization': context['apikey'],
                  'Content-Type': 'application/json'}
     )
