@@ -12,7 +12,7 @@ import urlparse
 
 site_url = config.get("ckan.internal_site_url","http://127.0.0.1")
 
-@celery.task(name = "background_api_call.__call_function")
+@celery.task(name = "background_api_call.__call_function", default_retry_delay = 60, max_retries=5)
 def call_function(context, data_dict):
     context = json.loads(context)
     api_url = urlparse.urljoin(site_url, 'api/3/action')
