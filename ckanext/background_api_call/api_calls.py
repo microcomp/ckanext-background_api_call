@@ -19,6 +19,7 @@ import os, sys
 import ckan.lib.munge as munge
 from ckan.lib.base import config
 
+
 class TempUpload(object):
     def __init__(self, resource, folder):
         self.path = folder
@@ -157,9 +158,10 @@ def call_function(context, data_dict):
             data_dict["url"] = "anything"
         if "type" not in data_dict.keys():
             data_dict["type"] = "file.upload"
-
-    celery.send_task("background_api_call.__call_function", args=[context2, data_dict])
-
+    logging.error(celery)
+    if  celery.pool.connection.connected == False:
+        celery.pool.connection.connect()
+    celery.send_task("background_api_call.__call_function", args=[context2, data_dict], task_id=str(uuid.uuid4()), connection=celery.pool.connection)
     return {"progress":"task in queue", "task_id":task_id}
 
 @ckan.logic.side_effect_free
