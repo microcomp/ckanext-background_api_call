@@ -33,7 +33,14 @@ def call_function(context, data_dict):
         funct = data_dict.get('function')
     except KeyError:
         funct = "" 
-
+    try:
+        data_dict["name"] = data_dict["name"].encode('utf-8')
+    except KeyError:
+        pass
+    try:
+        data_dict["description"] = data_dict["description"].encode('utf-8')
+    except KeyError:
+        pass
     
     url = api_url + '/'+data_dict['function']
     fil = data_dict.get("file", None)
