@@ -41,7 +41,7 @@ def call_function(context, data_dict):
         data_dict["description"] = data_dict["description"].encode('utf-8')
     except KeyError:
         pass
-    
+
     url = api_url + '/'+data_dict['function']
     fil = data_dict.get("file", None)
     data_dict.pop("function")
@@ -66,7 +66,10 @@ def call_function(context, data_dict):
         to["result"] = 'task complete...'
         to['response'] = json.loads(response.text)
         if funct == "resource_create" or funct == "resource_update":
-            to["response"]["result"]["url"] = "/".join(to["response"]["result"]["url"].split("/")[:-1])+"/"+data_dict["file_name"]
+            try:
+                to["response"]["result"]["url"] = "/".join(to["response"]["result"]["url"].split("/")[:-1])+"/"+data_dict["file_name"]
+            except KeyError:
+                pass
     else:
         to = {}
         to["result"] = 'task failed...'
@@ -91,8 +94,11 @@ def call_function(context, data_dict):
     
     import os
     if fil != None:
-        os.remove(fil)
-        dr = fil.split("/")
-        dr = dr[:-1]
-        os.rmdir("/".join(dr))
+        try:
+            os.remove(fil)
+            dr = fil.split("/")
+            dr = dr[:-1]
+            os.rmdir("/".join(dr))
+        except OSError:
+            pass
     return "done..."
