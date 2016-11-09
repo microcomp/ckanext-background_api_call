@@ -70,7 +70,16 @@ def call_function(context, data_dict):
     else:
         to = {}
         to["result"] = 'task failed...'
-        to['response'] = json.loads(response.text)
+        try:
+            to['response'] = json.loads(response.text)
+        except ValueError:
+            logging.error("response text:")
+            logging.error(str(response.text))
+            logging.error("request data:")
+            logging.error(str(data_dict))
+            logging.error("response code:")
+            logging.error(str(response.status_code))
+            to['response'] = "An unexpected error prevented the server from fulfilling your request."
 
     dd = {'to':json.dumps(to), 'id':data_dict['task_id']}
     logging.debug("background_api_call: "+"changing db row...")
